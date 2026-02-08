@@ -1,0 +1,37 @@
+name: Run every 2 hours
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'  # каждые 2 часа
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    env:
+      MAIN_TOKEN: ${{ secrets.MAIN_TOKEN }}
+      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install requests loguru python-dotenv; fi
+      - name: Ensure secrets
+        run: |
+          if [ -z "$MAIN_TOKEN" ] || [ -z "$BOT_TOKEN" ]; then echo "Missing MAIN_TOKEN or BOT_TOKEN" >&2; exit 1; fi
+      - name: Show repo tree (debug)
+        run: |
+          echo "PWD: $(pwd)"
+          ls -la
+          echo "Top-level dirs:"
+          find . -maxdepth 2 -type d -print
+      - name: Run script (explicit path)
+        run: |
+          if [ -f FarmWinsAlmaz-durakonline-main/main.py ]; then python FarmWinsAlmaz-durakonline-main/main.py; else echo "File not found: FarmWinsAlmaz-durakonline-main/main.py" >&2; ls -la; exit 1; fi
